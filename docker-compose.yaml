@@ -1,0 +1,38 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: cmd/frontend/Dockerfile
+    environment:
+      DD_AGENT_HOST: "datadog-agent"
+      DD_TRACE_AGENT_PORT: "8126"
+    ports:
+      - "8080:80"
+    links:
+      - backend
+  backend:
+    expose:
+      - "80"
+    build:
+      context: .
+      dockerfile: cmd/backend/Dockerfile
+    environment:
+      DD_AGENT_HOST: "datadog-agent"
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_STATSD_AGENT_PORT: "8125"
+    links:
+      - datadog-agent
+  datadog-agent:
+    image: datadog/agent:latest
+    environment:
+      DD_API_KEY: "<sensitive>"
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+    expose:
+      - "8125"
+      - "8126"
+    volumes:
+      - "/proc/:/host/proc/:ro"
+      - "/sys/fs/cgroup/:/host/sys/fs/cgroup:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
